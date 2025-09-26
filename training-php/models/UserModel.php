@@ -24,13 +24,50 @@ class UserModel extends BaseModel {
      * @param $password
      * @return array
      */
+    // chưa sửa 
+    // public function auth($userName, $password) {
+    //     $md5Password = md5($password);
+    //     $sql = 'SELECT * FROM users WHERE name = "' . $userName . '" AND password = "'.$md5Password.'"';
+
+    //     $user = $this->select($sql);
+    //     return $user;
+    // }
+    // đã chặn 
+    // UserModel.php (Mã nguồn đã sửa - AN TOÀN)
     public function auth($userName, $password) {
         $md5Password = md5($password);
-        $sql = 'SELECT * FROM users WHERE name = "' . $userName . '" AND password = "'.$md5Password.'"';
-
-        $user = $this->select($sql);
-        return $user;
-    }
+    
+        // 1. Sử dụng Prepared Statement với placeholders (?)
+        // Tên và mật khẩu được mã hóa sẽ được thay thế an toàn
+        $sql = 'SELECT * FROM users WHERE name = ? AND password = ?';
+    
+        // 2. Chuẩn bị (Prepare) câu lệnh SQL
+        $stmt = self::$_connection->prepare($sql);
+    
+        // KIỂM TRA LỖI: Luôn kiểm tra xem lệnh prepare có thành công không
+        if (!$stmt) {
+            die('Lỗi prepare SQL: ' . self::$_connection->error);
+        }
+    
+        // 3. Liên kết tham số (Bind Parameters)
+        // "ss" chỉ định rằng cả hai tham số đều là chuỗi (string)
+        $stmt->bind_param("ss", $userName, $md5Password);
+    
+        // 4. Thực thi (Execute)
+        $stmt->execute();
+    
+        // 5. Lấy kết quả
+        $result = $stmt->get_result();
+        $rows = [];
+        while ($row = $result->fetch_assoc()) {
+            $rows[] = $row;
+        }
+    
+    // 6. Đóng Statement
+    $stmt->close();
+    
+    return $rows;
+}
 
     /**
      * Delete user by id
@@ -78,23 +115,71 @@ class UserModel extends BaseModel {
      * @param array $params
      * @return array
      */
-    public function getUsers($params = []) {
-        //Keyword
-        if (!empty($params['keyword'])) {
-            $sql = 'SELECT * FROM users WHERE name LIKE "%' . $params['keyword'] .'%"';
 
-            //Keep this line to use Sql Injection
-            //Don't change
-            //Example keyword: abcef%";TRUNCATE banks;##
-            $users = self::$_connection->multi_query($sql);
+    // Chưa Sửa Tấn Công SQL Injection  
+    // public function getUsers($params = []) {
+    //     //Keyword
+    //     if (!empty($params['keyword'])) {
+    //     $sql = 'SELECT * FROM users WHERE name LIKE "%' . $params['keyword'] .'%"';
 
-            //Get data
-            $users = $this->query($sql);
-        } else {
-            $sql = 'SELECT * FROM users';
-            $users = $this->select($sql);
+    //     // 1. Thực thi Multi-Query (Đã xóa bảng thành công)
+    //     self::$_connection->multi_query($sql); // ẩn dòng này để chặn xóa bảng %" ; DROP TABLE banks; --
+        
+    //     // 2. XỬ LÝ KẾT QUẢ ĐỂ TRÁNH LỖI "COMMANDS OUT OF SYNC"
+    //     // Dùng vòng lặp để xử lý (bỏ qua) tất cả các kết quả từ Multi-Query
+    //     do {
+    //         if ($result = self::$_connection->store_result()) {
+    //             $result->free();
+    //         }
+    //     } while (self::$_connection->more_results() && self::$_connection->next_result());
+        
+    //     // 3. Đoạn code này bây giờ sẽ chạy lại mà không bị lỗi
+    //     $users = $this->query($sql); 
+    //     } else {
+    //         $sql = 'SELECT * FROM users';
+    //         $users = $this->select($sql);
+    //     }
+
+    //     return $users;
+    // }
+
+
+    // Dã Sửa Tấn Công SQL Injection  
+    // UserModel.php (Sửa chữa KHẨN CẤP)
+
+public function getUsers($params = []) {
+    //Keyword
+    if (!empty($params['keyword'])) {
+        
+        // 1. Chuẩn bị giá trị keyword cho LIKE
+        $keyword = '%' . $params['keyword'] . '%';
+        
+        // 2. Sử dụng Prepared Statements với placeholder (?)
+        $sql = 'SELECT * FROM users WHERE name LIKE ?';
+
+        // KHÔNG BAO GIỜ DÙNG multi_query() VỚI DỮ LIỆU NGƯỜI DÙNG.
+        // Thay thế bằng lệnh Prepare và Execute của mysqli.
+        $stmt = self::$_connection->prepare($sql);
+        
+        // Liên kết tham số (s: string)
+        $stmt->bind_param("s", $keyword);
+        
+        // Thực thi
+        $stmt->execute();
+        
+        // Lấy kết quả
+        $result = $stmt->get_result();
+        $users = [];
+        while ($row = $result->fetch_assoc()) {
+            $users[] = $row;
         }
-
-        return $users;
+        
+    } else {
+        $sql = 'SELECT * FROM users';
+        // Vẫn nên chuyển hàm select này sang Prepared Statements sau này
+        $users = $this->select($sql);
     }
+
+    return $users;
+}
 }
