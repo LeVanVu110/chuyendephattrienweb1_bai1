@@ -27,6 +27,7 @@ if (!empty($_POST['submit'])) {
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
     <title>User form</title>
     <?php include 'views/meta.php' ?>
 </head>
@@ -44,6 +45,10 @@ if (!empty($_POST['submit'])) {
                         <label for="name">Name</label>
                         <input class="form-control" name="name" placeholder="Name" value='<?php if (!empty($user[0]['name'])) echo $user[0]['name'] ?>'>
                     </div>
+                    <!-- <div class="form-group">
+                        <label for="fullname">fullname</label>
+                        <input class="form-control" name="fullname" placeholder="fullname" value='<?php if (!empty($user[0]['fullname'])) echo $user[0]['fullname'] ?>'>
+                    </div> -->
                     <div class="form-group">
                         <label for="password">Password</label>
                         <input type="password" name="password" class="form-control" placeholder="Password">

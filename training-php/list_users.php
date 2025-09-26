@@ -4,11 +4,18 @@ session_start();
 
 require_once 'models/UserModel.php';
 $userModel = new UserModel();
-
+// chưa sửa
 $params = [];
 if (!empty($_GET['keyword'])) {
     $params['keyword'] = $_GET['keyword'];
 }
+
+// CODE ĐÃ SỬA cách ngăn chặn xss
+// $params = [];
+// if (!empty($_GET['keyword'])) {
+//     // Làm sạch đầu vào keyword để bảo vệ chống XSS
+//     $params['keyword'] = htmlspecialchars($_GET['keyword']);
+// }
 
 $users = $userModel->getUsers($params);
 ?>
@@ -42,12 +49,16 @@ $users = $userModel->getUsers($params);
                             <th scope="row"><?php echo $user['id']?></th>
                             <td>
                                 <?php echo $user['name']?>
+                                 <!-- <?php echo htmlspecialchars($user['name'])?> //cách ngăn chặn xss --> 
+                                
                             </td>
                             <td>
                                 <?php echo $user['fullname']?>
+                                 <!-- <?php echo htmlspecialchars($user['fullname'])?> //cách ngăn chặn xss -->
                             </td>
                             <td>
                                 <?php echo $user['type']?>
+                                <!-- <?php echo htmlspecialchars($user['type'])?> //cách ngăn chặn xss -->
                             </td>
                             <td>
                                 <a href="form_user.php?id=<?php echo $user['id'] ?>">

@@ -24,7 +24,7 @@ class UserModel extends BaseModel {
      * @param $password
      * @return array
      */
-    // chưa sửa 
+    // chưa sửa login
     // public function auth($userName, $password) {
     //     $md5Password = md5($password);
     //     $sql = 'SELECT * FROM users WHERE name = "' . $userName . '" AND password = "'.$md5Password.'"';
@@ -32,7 +32,7 @@ class UserModel extends BaseModel {
     //     $user = $this->select($sql);
     //     return $user;
     // }
-    // đã chặn 
+    // đã chặn phần login
     // UserModel.php (Mã nguồn đã sửa - AN TOÀN)
     public function auth($userName, $password) {
         $md5Password = md5($password);
@@ -101,14 +101,47 @@ class UserModel extends BaseModel {
      * @param $input
      * @return mixed
      */
+    // public function insertUser($input) {
+    //     $sql = "INSERT INTO `app_web1`.`users` (`name`, `password`) VALUES (" .
+    //             "'" . $input['name'] . "', '".md5($input['password'])."')";
+
+    //     $user = $this->insert($sql);
+
+    //     return $user;
+    // }
+
+
+    //đã sửa
     public function insertUser($input) {
-        $sql = "INSERT INTO `app_web1`.`users` (`name`, `password`) VALUES (" .
-                "'" . $input['name'] . "', '".md5($input['password'])."')";
+    $name = isset($input['name']) ? trim($input['name']) : '';
+    $fullname = isset($input['fullname']) ? trim($input['fullname']) : '';
+    $email = isset($input['email']) ? trim($input['email']) : '';
+    $type = isset($input['type']) ? trim($input['type']) : '';
+    $password = isset($input['password']) ? $input['password'] : '';
 
-        $user = $this->insert($sql);
+    if ($name === '' || $password === '') return false;
 
-        return $user;
+    $hash = password_hash($password, PASSWORD_DEFAULT);
+
+    $sql = "INSERT INTO users (`name`, `fullname`, `email`, `type`, `password`) VALUES (?, ?, ?, ?, ?)";
+    $stmt = self::$_connection->prepare($sql);
+    if (!$stmt) {
+        error_log("Prepare failed insertUser: " . self::$_connection->error);
+        return false;
     }
+    $stmt->bind_param('sssss', $name, $fullname, $email, $type, $hash);
+    $ok = $stmt->execute();
+    if ($ok) {
+        $insertId = $stmt->insert_id;
+        $stmt->close();
+        return $insertId;
+    } else {
+        error_log("Execute failed insertUser: " . $stmt->error);
+        $stmt->close();
+        return false;
+    }
+}
+
 
     /**
      * Search users
